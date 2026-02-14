@@ -22,19 +22,6 @@ Personal portfolio website showcasing projects, education, and resources in Comp
 - Scroll-to-top button
 - Education timeline
 
-## Project Structure
-
-```
-src/
-├── App.tsx            # Main application component
-├── main.tsx           # React entry point
-├── index.css          # Global styles & Tailwind directives
-└── data/
-    ├── projects.json  # Project entries
-    └── education.json # Education entries
-```
-
-To add a new project, edit `src/data/projects.json`. To add education, edit `src/data/education.json`.
 
 ## Development
 
