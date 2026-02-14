@@ -1,0 +1,94 @@
+[
+  {
+    "title": "Risk Matrix – Cybersecurity Risk Assessment Platform",
+    "category": "Security",
+    "description": "A comprehensive web platform to identify, assess, and manage cybersecurity risks using a dynamic risk matrix model. Supports structured risk analysis across multiple categories with interactive UI, automatic matrix positioning, contextual recommendations, and exportable PDF reports.",
+    "skills": ["Vue.js", "Spring Boot", "REST API", "Information Security"]
+  },
+  {
+    "title": "Forensic Analysis of Push-to-Talk Communication Apps on Android",
+    "category": "Security",
+    "association": "Polytechnic of Leiria",
+    "description": "In-depth forensic examination of Zello, Voxer, and Voice Ping using static, dynamic, and post-mortem analysis. Identified authentication token leakage, plaintext storage of sensitive data, and poor cryptographic practices with major privacy implications.",
+    "skills": ["Forensic Analysis", "Reverse Engineering", "Android", "Security Analysis"]
+  },
+  {
+    "title": "Offensive Toolchain for Simulating Common Exploits",
+    "category": "Security",
+    "association": "Polytechnic of Leiria",
+    "description": "Multifunctional exploit framework simulating buffer overflows, DLL hijacking, ransomware, and rootkit-based keylogging. Combined Python-based vulnerability emulation with Rust payloads in a controlled testbed for security research and education.",
+    "skills": ["Red Team", "Rust", "Python", "Exploit Development"]
+  },
+  {
+    "title": "Penetration Testing of Virtualised Infrastructure",
+    "category": "Security",
+    "description": "Led a structured pentest across a virtualised environment with Metasploitable 2, pfSense, and Windows XP. Identified 40+ high-risk issues including RCEs, default credentials, and insecure protocols with CVE documentation and CVSS 3.1 scoring.",
+    "skills": ["Penetration Testing", "Vulnerability Assessment", "CVSS"]
+  },
+  {
+    "title": "Advanced Networking and ISP Architecture Design",
+    "category": "Networking",
+    "association": "Polytechnic of Leiria",
+    "description": "Architected a multi-ISP network infrastructure using GNS3 supporting IPv4 and IPv6. Engineered BGP and OSPF routing solutions, implemented MPLS L3VPN services for enterprise clients, and designed redundant paths for high availability.",
+    "skills": ["GNS3", "Network Design", "BGP", "OSPF", "MPLS"]
+  },
+  {
+    "title": "Enterprise Network Topology Design and Implementation",
+    "category": "Networking",
+    "description": "Designed an enterprise network connecting three datacenters with redundant ISP connections. Created high-availability solutions with failover mechanisms, disaster recovery procedures, and scalable storage with automated backup systems.",
+    "skills": ["Network Design", "High Availability", "Disaster Recovery"]
+  },
+  {
+    "title": "SDN Controller for MikroTik Devices",
+    "category": "Networking",
+    "association": "Polytechnic of Leiria",
+    "description": "Centralized SDN management platform for MikroTik devices using C# and ASP.NET Core. Engineered automated network configuration workflows, real-time monitoring of network metrics, and integrated WireGuard VPN management.",
+    "skills": ["C#", "ASP.NET", "REST API", "Network Administration"]
+  },
+  {
+    "title": "Gesture Translation and Recognition",
+    "category": "Development",
+    "description": "AI-powered gesture recognition system for real-time sign language translation. Created scalable architecture for multiple users, implemented TensorFlow ML models for gesture detection, and built a streaming pipeline for real-time processing.",
+    "skills": ["Python", "TensorFlow", "Machine Learning", "Client-Server"]
+  },
+  {
+    "title": "3D Web Interface for Product Visualisation",
+    "category": "Development",
+    "association": "Polytechnic of Leiria",
+    "description": "Interactive 3D product visualization platform using Three.js and Node.js. Implemented WebGL-based rendering optimizations, real-time texture and lighting manipulation, and responsive design supporting multiple device formats.",
+    "skills": ["Three.js", "Node.js", "JavaScript", "Blender", "WebGL"]
+  },
+  {
+    "title": "Kubernetes Management Application",
+    "category": "Development",
+    "description": "Comprehensive Kubernetes orchestration dashboard for streamlined cluster management. Monitoring of cluster health metrics, automated deployment workflows, and resource optimization with intuitive interfaces for managing containers, pods, and services.",
+    "skills": ["Kubernetes", "Container Orchestration", "Dashboard"]
+  },
+  {
+    "title": "Voting Application on Blockchain",
+    "category": "Development",
+    "description": "Decentralized voting platform utilizing Ethereum smart contracts and Solidity ensuring vote immutability and transparency. Implemented zero-knowledge proofs for voter privacy with Vue-based frontend and MetaMask wallet authentication.",
+    "skills": ["Blockchain", "Solidity", "Vue.js", "Ethereum"]
+  },
+  {
+    "title": "SOMIOD – IoT Middleware Platform",
+    "category": "Development",
+    "association": "Polytechnic of Leiria",
+    "description": "Middleware platform enabling seamless IoT device integration and data interchange. RESTful API for device management, real-time event notification via MQTT, and data transformation pipelines for interoperability between diverse IoT platforms.",
+    "skills": ["IoT", "REST API", "MQTT", "Middleware"]
+  },
+  {
+    "title": "Space-Time WikiMaps",
+    "category": "Development",
+    "association": "Polytechnic of Leiria",
+    "description": "High-performance Java REST service leveraging Apache Jena and Spring Boot for SPARQL queries against Wikidata. Efficient query processing pipeline with automated result caching and 90% test code coverage.",
+    "skills": ["Java", "Spring Boot", "SPARQL", "Maven"]
+  },
+  {
+    "title": "Implementation of Virtualisation Systems",
+    "category": "Development",
+    "association": "Polytechnic of Leiria",
+    "description": "Designed and deployed virtualization environments using Hyper-V and VMware. Implemented failover clustering, iSCSI storage networks, PowerShell automation for resource optimization, and comprehensive monitoring systems.",
+    "skills": ["Virtualization", "Hyper-V", "VMware", "PowerShell"]
+  }
+]

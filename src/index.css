@@ -1,3 +1,58 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #000;
+    color: #fff;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0a0a0a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #4c1d95;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #6d28d9;
+  }
+}
+
+@layer components {
+  .fade-in-section {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+  }
+
+  .fade-in-section.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .glow {
+    box-shadow: 0 0 12px rgba(138, 43, 226, 0.25);
+  }
+
+  .glow:hover {
+    box-shadow: 0 0 20px rgba(138, 43, 226, 0.45);
+  }
+
+  .card-glow:hover {
+    box-shadow: 0 0 30px rgba(138, 43, 226, 0.1),
+                inset 0 0 30px rgba(138, 43, 226, 0.03);
+  }
+}
