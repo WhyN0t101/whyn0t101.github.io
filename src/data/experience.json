@@ -1,0 +1,28 @@
+[
+  {
+    "title": "Bolsa de Iniciação à Investigação (BII) – Researcher",
+    "organisation": "Instituto Politécnico de Leiria – Centro de Competências em Cibersegurança",
+    "location": "Leiria, Portugal",
+    "period": "Nov 2024 – Oct 2025",
+    "type": "primary",
+    "bullets": [
+      "Participated in technical meetings to define and align cybersecurity initiatives.",
+      "Supported 30+ organisations in strengthening their cybersecurity posture through assessments, guidance, and tailored improvement plans delivered both on-site and remotely.",
+      "Co-authored and produced practical materials, including cybersecurity guides, checklists, and reference frameworks (e.g. risk matrix, business continuity, asset management, incident response).",
+      "Helped prepare and deliver workshops to raise awareness and improve security practices across organisations.",
+      "Assisted in the development of diagnostic tools for risk evaluation and incident response readiness.",
+      "Produced technical reports consolidating findings and actionable recommendations for adoption by organisations."
+    ]
+  },
+  {
+    "title": "RUN-EU Cybersecurity and IoT Programme",
+    "organisation": "NHL Stenden, Netherlands",
+    "period": "Mar 2025",
+    "type": "secondary",
+    "bullets": [
+      "Engaged in intercultural teamwork and creative problem-solving with peers from 7 European universities.",
+      "Co-developed proposals for SME cybersecurity training and social engineering awareness modules.",
+      "Applied RUN-EU pedagogical principles to design innovative and challenge-based learning activities."
+    ]
+  }
+]

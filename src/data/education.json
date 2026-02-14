@@ -3,12 +3,14 @@
     "degree": "Master's Degree",
     "field": "Cybersecurity and Digital Forensics",
     "school": "Polytechnic of Leiria",
-    "period": "2024 – 2026"
+    "period": "2024 – 2026",
+    "focus": "Malware development, Forensic Investigation, Network Security"
   },
   {
     "degree": "Bachelor's Degree",
     "field": "Computer Engineering",
     "school": "Polytechnic of Leiria",
-    "period": "2021 – 2024"
+    "period": "2021 – 2024",
+    "focus": "Software Development, Network Configuration & Administration, Operating Systems, Algorithms"
   }
 ]

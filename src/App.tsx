@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Github, Linkedin, Globe, Terminal, Code2, Cpu,
-  Shield, Network, GraduationCap, ExternalLink,
-  Menu, X, ChevronUp
+  Github, Linkedin, Globe, Terminal, Code2,
+  Shield, Network, GraduationCap,
+  Menu, X, ChevronUp, Briefcase
 } from 'lucide-react';
 import projectsData from './data/projects.json';
 import educationData from './data/education.json';
+import experienceData from './data/experience.json';
 
 // ── Hooks ──
 
@@ -202,7 +203,8 @@ const categoryConfig: Record<Exclude<Category, "All">, { icon: any; color: strin
 };
 
 const projects: Project[] = projectsData as Project[];
-const education = educationData;
+const education = educationData as { degree: string; field: string; school: string; period: string; focus: string }[];
+const experience = experienceData as { title: string; organisation: string; location?: string; period: string; type: 'primary' | 'secondary'; bullets: string[] }[];
 
 const toolLinks = [
   { name: "CyberChef", url: "https://gchq.github.io/CyberChef/" },
@@ -224,8 +226,8 @@ const socialLinks = [
   { href: 'https://gist.github.com/WhyN0t101', icon: Globe, label: 'Gists' },
 ];
 
-const navItems = ['About', 'Education', 'Projects', 'Resources'];
-const sectionIds = ['about', 'education', 'projects', 'resources'];
+const navItems = ['About', 'Experience', 'Education', 'Projects'];
+const sectionIds = ['about', 'experience', 'education', 'projects'];
 
 // ── Header ──
 
@@ -272,13 +274,13 @@ function Header() {
                     href={`#${id}`}
                     className={`transition-colors duration-200 ${
                       isActive
-                        ? 'text-purple-400'
-                        : 'text-gray-400 hover:text-purple-400'
+                        ? 'text-purple-300'
+                        : 'text-gray-300 hover:text-purple-300'
                     }`}
                   >
                     {item}
                     {isActive && (
-                      <span className="block h-0.5 mt-1 bg-purple-400 rounded-full" />
+                      <span className="block h-0.5 mt-1 bg-purple-300 rounded-full" />
                     )}
                   </a>
                 </li>
@@ -310,7 +312,7 @@ function Header() {
                     href={`#${id}`}
                     onClick={handleNavClick}
                     className={`block py-1 transition-colors duration-200 ${
-                      isActive ? 'text-purple-400' : 'text-gray-400'
+                      isActive ? 'text-purple-300' : 'text-gray-300'
                     }`}
                   >
                     {item}
@@ -367,35 +369,13 @@ function ProjectCard({ project }: { project: Project }) {
         {project.skills.map((skill, i) => (
           <span
             key={i}
-            className="px-2.5 py-0.5 text-xs bg-purple-500/10 text-purple-300 border border-purple-500/20 rounded-full"
+            className="px-2.5 py-1 text-xs font-medium bg-purple-500/15 text-purple-200 border border-purple-500/30 rounded-full"
           >
             {skill}
           </span>
         ))}
       </div>
     </div>
-  );
-}
-
-// ── Link List ──
-
-function LinkList({ links }: { links: { name: string; url: string }[] }) {
-  return (
-    <ul className="space-y-3">
-      {links.map((link) => (
-        <li key={link.name}>
-          <a
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2.5 text-sm text-gray-400 hover:text-purple-300 transition-colors group"
-          >
-            <ExternalLink className="w-3.5 h-3.5 text-purple-500/50 group-hover:text-purple-400 transition-colors" />
-            {link.name}
-          </a>
-        </li>
-      ))}
-    </ul>
   );
 }
 
@@ -428,13 +408,8 @@ function App() {
         {/* ── Hero ── */}
         <section id="hero" className="min-h-screen flex items-center justify-center pt-16">
           <FadeInSection className="text-center px-6">
-            <div className="mb-6">
-              <span className="text-purple-400/80 text-sm tracking-[0.3em] uppercase">
-                Welcome to my portfolio
-              </span>
-            </div>
             <h1
-              className="text-6xl md:text-8xl font-bold mb-4 py-2 tracking-tight leading-none bg-gradient-to-r from-purple-300 via-purple-500 to-purple-800 text-transparent bg-clip-text"
+              className="text-6xl md:text-8xl font-bold mb-4 py-2 tracking-tight leading-none bg-gradient-to-r from-white via-purple-200 to-purple-400 text-transparent bg-clip-text"
               style={{ fontFamily: "'Inter', sans-serif" }}
             >
               Tiago Pereira
@@ -442,7 +417,7 @@ function App() {
             <p className="text-lg text-gray-400 mb-10 max-w-lg mx-auto">
               <Typewriter text="Computer Engineer · Cybersecurity & Digital Forensics" speed={45} />
             </p>
-            <div className="flex justify-center gap-3">
+            <div className="flex justify-center gap-3 mb-8">
               {socialLinks.map(({ href, icon: SocialIcon, label }) => (
                 <a
                   key={label}
@@ -450,13 +425,23 @@ function App() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-3 rounded-lg bg-purple-900/40 border border-purple-500/20
-                             hover:bg-purple-800/50 hover:border-purple-500/40 transition-all duration-200 glow"
+                             hover:bg-purple-800/50 hover:border-purple-500/40 hover:scale-110
+                             transition-all duration-200 glow"
                   title={label}
                 >
                   <SocialIcon className="w-5 h-5" />
                 </a>
               ))}
             </div>
+            <a
+              href="#projects"
+              className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-purple-300
+                         border border-purple-500/30 rounded-full hover:bg-purple-900/40
+                         hover:border-purple-500/50 transition-all duration-200"
+            >
+              View my work
+              <ChevronUp className="w-4 h-4 rotate-180" />
+            </a>
           </FadeInSection>
         </section>
 
@@ -471,14 +456,69 @@ function App() {
               About Me
             </h2>
             <p className="text-gray-400 leading-relaxed">
-              A recent computer engineering graduate and current Cybersecurity student, driven by a
-              passion for staying at the forefront of the rapidly evolving IT landscape. With a solid
-              foundation in programming languages and software development principles, I'm excited to
-              apply my skills to make a meaningful impact in the industry. Currently expanding my
-              expertise in Cybersecurity, with a focus on malware analysis, network security, and
-              threat mitigation strategies. I'm eager to leverage my hands-on approach to learning
-              and problem-solving to contribute to a dynamic organization.
+              Computer Engineer entering the second year of an MSc in Cybersecurity &amp; Digital
+              Forensics. My work so far has focused on malware development and analysis, forensic
+              investigation, secure network design, and penetration testing, all through hands-on
+              projects that replicate real-world attack and defence scenarios.
             </p>
+          </div>
+        </FadeInSection>
+
+        {/* ── Experience ── */}
+        <FadeInSection id="experience" className="container mx-auto px-6 py-20">
+          <h2
+            className="text-2xl font-semibold mb-10 flex items-center gap-2"
+            style={{ fontFamily: "'VT323', monospace" }}
+          >
+            <Briefcase className="w-5 h-5 text-purple-400" />
+            Experience
+          </h2>
+          <div className="max-w-3xl mx-auto relative">
+            <div className="absolute left-[15px] top-[20px] bottom-[20px] w-px bg-purple-500/20" />
+
+            <div className="space-y-6">
+              {experience.map((exp, i) => {
+                const isSecondary = exp.type === 'secondary';
+                return (
+                  <div key={i} className="flex gap-6">
+                    <div className="relative flex-shrink-0">
+                      {isSecondary ? (
+                        <div className="w-[31px] h-[31px] rounded-full border-2 border-purple-500/25 border-dashed flex items-center justify-center z-10 relative mt-1">
+                          <div className="w-2 h-2 rounded-full bg-purple-500/40" />
+                        </div>
+                      ) : (
+                        <div className="w-[31px] h-[31px] rounded-full bg-purple-500/20 border-2 border-purple-500/40 flex items-center justify-center z-10 relative mt-1">
+                          <div className="w-2 h-2 rounded-full bg-purple-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className={`bg-gray-900/50 border border-purple-500/10 rounded-xl flex-1 hover:border-purple-500/30 transition-all duration-300 ${isSecondary ? 'p-5' : 'p-6'}`}>
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-1">
+                        <h3
+                          className={`font-semibold ${isSecondary ? 'text-gray-300 text-base' : 'text-white text-lg'}`}
+                          style={{ fontFamily: "'VT323', monospace", fontSize: isSecondary ? '1.15rem' : '1.3rem' }}
+                        >
+                          {exp.title}
+                        </h3>
+                        <span className={`text-sm font-medium whitespace-nowrap sm:ml-4 ${isSecondary ? 'text-purple-400/70' : 'text-purple-400'}`}>{exp.period}</span>
+                      </div>
+                      <p className={`text-sm ${isSecondary ? 'text-purple-300/70' : 'text-purple-300'}`}>{exp.organisation}</p>
+                      {exp.location && (
+                        <p className="text-gray-500 text-sm mt-0.5">{exp.location}</p>
+                      )}
+                      <ul className="mt-3 space-y-2">
+                        {exp.bullets.map((bullet, j) => (
+                          <li key={j} className={`text-sm leading-relaxed flex gap-2 ${isSecondary ? 'text-gray-500' : 'text-gray-400'}`}>
+                            <span className="text-purple-500/60 mt-1.5 flex-shrink-0">&#8226;</span>
+                            <span>{bullet}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </FadeInSection>
 
@@ -492,8 +532,7 @@ function App() {
             Education
           </h2>
           <div className="max-w-3xl mx-auto relative">
-            {/* Timeline line */}
-            <div className="absolute left-[15px] top-4 bottom-4 w-px bg-purple-500/20" />
+            <div className="absolute left-[15px] top-[20px] bottom-[20px] w-px bg-purple-500/20" />
 
             <div className="space-y-6">
               {education.map((edu, i) => (
@@ -515,6 +554,7 @@ function App() {
                     </div>
                     <p className="text-purple-300 text-sm">{edu.field}</p>
                     <p className="text-gray-500 text-sm mt-1">{edu.school}</p>
+                    <p className="text-gray-500 text-sm mt-2">Focus areas: {edu.focus}</p>
                   </div>
                 </div>
               ))}
@@ -561,37 +601,34 @@ function App() {
           </div>
         </FadeInSection>
 
-        {/* ── Resources ── */}
-        <FadeInSection id="resources" className="container mx-auto px-6 py-20">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            <div className="bg-gray-900/50 border border-purple-500/10 backdrop-blur-sm rounded-xl p-6">
-              <h2
-                className="text-xl font-semibold mb-5 flex items-center gap-2"
-                style={{ fontFamily: "'VT323', monospace" }}
-              >
-                <Code2 className="w-5 h-5 text-purple-400" />
-                Tools &amp; Resources
-              </h2>
-              <LinkList links={toolLinks} />
-            </div>
-
-            <div className="bg-gray-900/50 border border-purple-500/10 backdrop-blur-sm rounded-xl p-6">
-              <h2
-                className="text-xl font-semibold mb-5 flex items-center gap-2"
-                style={{ fontFamily: "'VT323', monospace" }}
-              >
-                <Cpu className="w-5 h-5 text-purple-400" />
-                Hax &amp; Exploits
-              </h2>
-              <LinkList links={haxLinks} />
-            </div>
-          </div>
-        </FadeInSection>
-
         {/* ── Footer ── */}
-        <footer className="border-t border-purple-500/10 py-8 mt-10">
-          <div className="container mx-auto px-6 text-center">
-            <p className="text-sm text-gray-600">
+        <footer className="py-8 mt-10">
+          <div className="container mx-auto px-6">
+            <div className="flex flex-wrap justify-center gap-x-10 gap-y-4 text-sm text-gray-500 mb-4">
+              {[...toolLinks, ...haxLinks].map((link) => (
+                <a
+                  key={link.name}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-purple-300 transition-colors"
+                >
+                  {link.name}
+                </a>
+              ))}
+              {socialLinks.map(({ href, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-purple-300 transition-colors"
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
+            <p className="text-center text-sm text-gray-600">
               &copy; {new Date().getFullYear()} Tiago Pereira
             </p>
           </div>
