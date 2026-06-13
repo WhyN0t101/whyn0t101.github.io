@@ -818,7 +818,7 @@ function App() {
                   <strong>Computer Engineer</strong> with an MSc in{' '}
                   <strong>Cybersecurity &amp; Digital Forensics</strong>. My work has focused on
                   malware development and analysis, forensic investigation, secure network design,
-                  and penetration testing — all through hands-on projects that replicate real-world
+                  and penetration testing, all through hands-on projects that replicate real-world
                   attack and defence scenarios.
                 </p>
                 <div className="about-tags">
@@ -962,7 +962,7 @@ function App() {
                 ))}
               </div>
               <div className="foot-bottom">
-                <span># © {new Date().getFullYear()} Tiago Pereira — all systems nominal</span>
+                <span># © {new Date().getFullYear()} Tiago Pereira</span>
               </div>
             </div>
           </footer>
