@@ -1,640 +1,994 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Github, Linkedin, Globe, Terminal, Code2,
-  Shield, Network, GraduationCap,
-  Menu, X, ChevronUp, Briefcase
-} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import projectsData from './data/projects.json';
 import educationData from './data/education.json';
 import experienceData from './data/experience.json';
 
-// ── Hooks ──
+/* ============================================================
+   Data
+   ============================================================ */
 
-function useInView(options?: IntersectionObserverInit) {
-  const [inView, setInView] = useState(false);
-  const ref = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-          observer.unobserve(entry.target);
-        }
-      },
-      options
-    );
-    const el = ref.current;
-    if (el) observer.observe(el);
-    return () => { if (el) observer.unobserve(el); };
-  }, []);
-
-  return [ref, inView] as const;
-}
-
-function useActiveSection(sectionIds: string[]) {
-  const [active, setActive] = useState('');
-
-  useEffect(() => {
-    const observers: IntersectionObserver[] = [];
-
-    sectionIds.forEach((id) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) setActive(id);
-        },
-        { rootMargin: '-40% 0px -55% 0px' }
-      );
-      observer.observe(el);
-      observers.push(observer);
-    });
-
-    return () => observers.forEach((o) => o.disconnect());
-  }, [sectionIds]);
-
-  return active;
-}
-
-// ── Components ──
-
-function FadeInSection({ children, className = "", ...rest }: any) {
-  const [ref, inView] = useInView({ threshold: 0.1 });
-  return (
-    <section
-      ref={ref}
-      className={`fade-in-section ${inView ? 'visible' : ''} ${className}`}
-      {...rest}
-    >
-      {children}
-    </section>
-  );
-}
-
-function MatrixRain() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext('2d')!;
-
-    let columns: number;
-    let drops: number[];
-    const fontSize = 14;
-    const frameInterval = 1000 / 30;
-
-    const initDrops = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      columns = Math.floor(canvas.width / fontSize);
-      drops = Array(columns).fill(1);
-    };
-    initDrops();
-
-    const draw = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = 'rgba(138, 43, 226, 0.5)';
-      ctx.font = `${fontSize}px monospace`;
-
-      for (let i = 0; i < drops.length; i++) {
-        const text = String.fromCharCode(0x30A0 + Math.random() * 96);
-        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
-        drops[i]++;
-      }
-    };
-
-    let animationFrameId: number;
-    let lastTime = 0;
-    const animate = (time: number) => {
-      animationFrameId = requestAnimationFrame(animate);
-      if (time - lastTime < frameInterval) return;
-      lastTime = time;
-      draw();
-    };
-    animationFrameId = requestAnimationFrame(animate);
-
-    window.addEventListener('resize', initDrops);
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-      window.removeEventListener('resize', initDrops);
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full z-0 opacity-40"
-    />
-  );
-}
-
-function Typewriter({ text, speed = 60 }: { text: string; speed?: number }) {
-  const [displayed, setDisplayed] = useState('');
-  const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    let i = 0;
-    setDisplayed('');
-    setDone(false);
-    const interval = setInterval(() => {
-      i++;
-      setDisplayed(text.slice(0, i));
-      if (i >= text.length) {
-        setDone(true);
-        clearInterval(interval);
-      }
-    }, speed);
-    return () => clearInterval(interval);
-  }, [text, speed]);
-
-  return (
-    <span>
-      {displayed}
-      <span className={`inline-block w-[2px] h-[1em] bg-purple-400 ml-0.5 align-middle ${done ? 'animate-blink' : ''}`} />
-    </span>
-  );
-}
-
-function ScrollToTop() {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY > window.innerHeight);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  if (!visible) return null;
-
-  return (
-    <button
-      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-      className="fixed bottom-6 right-6 z-50 p-3 rounded-full bg-purple-900/60 border border-purple-500/30
-                 hover:bg-purple-800/70 hover:border-purple-500/50 transition-all duration-200 glow
-                 backdrop-blur-sm"
-      aria-label="Scroll to top"
-    >
-      <ChevronUp className="w-5 h-5 text-purple-300" />
-    </button>
-  );
-}
-
-// ── Data ──
-
-type Category = "All" | "Security" | "Networking" | "Development";
+type CategoryName = 'Security' | 'Networking' | 'Development';
+type Category = 'All' | CategoryName;
 
 interface Project {
   title: string;
-  category: Exclude<Category, "All">;
+  slug: string;
+  category: CategoryName;
   association?: string;
   description: string;
   skills: string[];
 }
 
-const categoryConfig: Record<Exclude<Category, "All">, { icon: any; color: string }> = {
-  Security:    { icon: Shield,  color: "text-red-400" },
-  Networking:  { icon: Network, color: "text-blue-400" },
-  Development: { icon: Code2,   color: "text-green-400" },
+interface Experience {
+  title: string;
+  organisation: string;
+  location?: string;
+  period: string;
+  type: 'primary' | 'secondary';
+  bullets: string[];
+}
+
+interface Education {
+  degree: string;
+  field: string;
+  school: string;
+  period: string;
+  focus: string;
+}
+
+const projects = projectsData as Project[];
+const experience = experienceData as Experience[];
+const education = educationData as Education[];
+
+const identity = {
+  name: 'Tiago Pereira',
+  headline: 'Cybersecurity & Digital Forensics',
+  tagline: 'Computer Engineer · MSc, Polytechnic of Leiria',
 };
 
-const projects: Project[] = projectsData as Project[];
-const education = educationData as { degree: string; field: string; school: string; period: string; focus: string }[];
-const experience = experienceData as { title: string; organisation: string; location?: string; period: string; type: 'primary' | 'secondary'; bullets: string[] }[];
-
-const toolLinks = [
-  { name: "CyberChef", url: "https://gchq.github.io/CyberChef/" },
-  { name: "Regexr", url: "https://regexr.com/" },
-  { name: "Crontab Guru", url: "https://crontab.guru" },
+const social = [
+  { name: 'github', url: 'https://github.com/WhyN0t101', icon: 'github' as const },
+  { name: 'linkedin', url: 'https://www.linkedin.com/in/tiago-pereira-4763ab252/', icon: 'linkedin' as const },
+  { name: 'gists', url: 'https://gist.github.com/WhyN0t101', icon: 'globe' as const },
 ];
 
-const haxLinks = [
-  { name: "Sploitus", url: "https://sploitus.com" },
-  { name: "Exploit DB", url: "https://exploit-db.com" },
-  { name: "0day.today", url: "https://0day.today" },
-];
+const CATMAP: Record<CategoryName, { ext: string; cls: string; owner: string }> = {
+  Security: { ext: '.sec', cls: 'ext-s', owner: 'security' },
+  Networking: { ext: '.net', cls: 'ext-n', owner: 'network' },
+  Development: { ext: '.dev', cls: 'ext-d', owner: 'develop' },
+};
 
 const categories: Category[] = ['All', 'Security', 'Networking', 'Development'];
 
-const socialLinks = [
-  { href: 'https://github.com/WhyN0t101', icon: Github, label: 'GitHub' },
-  { href: 'https://www.linkedin.com/in/tiago-pereira-4763ab252/', icon: Linkedin, label: 'LinkedIn' },
-  { href: 'https://gist.github.com/WhyN0t101', icon: Globe, label: 'Gists' },
+const navItems = [
+  { id: 'about', label: 'about' },
+  { id: 'experience', label: 'experience' },
+  { id: 'education', label: 'education' },
+  { id: 'projects', label: 'projects' },
 ];
 
-const navItems = ['About', 'Experience', 'Education', 'Projects'];
-const sectionIds = ['about', 'experience', 'education', 'projects'];
+const footerCols = [
+  {
+    title: '// connect',
+    links: [
+      { label: 'GitHub', url: 'https://github.com/WhyN0t101' },
+      { label: 'LinkedIn', url: 'https://www.linkedin.com/in/tiago-pereira-4763ab252/' },
+      { label: 'Gists', url: 'https://gist.github.com/WhyN0t101' },
+    ],
+  },
+  {
+    title: '// toolbox',
+    links: [
+      { label: 'CyberChef', url: 'https://gchq.github.io/CyberChef/' },
+      { label: 'Regexr', url: 'https://regexr.com/' },
+      { label: 'Crontab Guru', url: 'https://crontab.guru' },
+    ],
+  },
+  {
+    title: '// research',
+    links: [
+      { label: 'Sploitus', url: 'https://sploitus.com' },
+      { label: 'Exploit DB', url: 'https://exploit-db.com' },
+      { label: '0day.today', url: 'https://0day.today' },
+    ],
+  },
+];
 
-// ── Header ──
+const reducedMotion =
+  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ============================================================
+   Icons (inline SVG markup, matching the source design)
+   ============================================================ */
+
+const ICON_MARKUP: Record<string, string> = {
+  github:
+    '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 016 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5A11.5 11.5 0 0023.5 12C23.5 5.7 18.3.5 12 .5z"/></svg>',
+  linkedin:
+    '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.3a1.7 1.7 0 110-3.5 1.7 1.7 0 010 3.5zM19 19h-3v-4.7c0-1.1 0-2.5-1.5-2.5s-1.8 1.2-1.8 2.4V19h-3v-9h2.9v1.2h.05a3.2 3.2 0 012.9-1.6c3 0 3.6 2 3.6 4.6z"/></svg>',
+  globe:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c2.5 2.6 3.9 6 4 9.5-.1 3.5-1.5 6.9-4 9.5-2.5-2.6-3.9-6-4-9.5.1-3.5 1.5-6.9 4-9.5z"/></svg>',
+  arrow:
+    '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+};
+
+/* ============================================================
+   Forensic hex / memory dump background canvas
+   ============================================================ */
+
+function HexDump() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d', { alpha: true });
+    if (!ctx) return;
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const FONT = 13;
+    const ROW_H = 22;
+    const BYTES = 16;
+    const SPEED = prefersReduced ? 0 : 0.6;
+
+    function byteAt(row: number, col: number) {
+      let h = (Math.imul(row, 2654435761) + Math.imul(col, 40503) + 0x9e3779b9) >>> 0;
+      h ^= h >>> 15;
+      h = Math.imul(h, 2246822519) >>> 0;
+      h ^= h >>> 13;
+      return h & 0xff;
+    }
+    function isHot(row: number, col: number) {
+      let h = (Math.imul(row, 374761393) + Math.imul(col, 668265263) + 0x85ebca6b) >>> 0;
+      h ^= h >>> 13;
+      return (h & 31) === 0;
+    }
+
+    const C_OFFSET = 'rgba(168,85,247,0.55)';
+    const C_BYTE = 'rgba(196,186,214,0.30)';
+    const C_ZERO = 'rgba(150,140,168,0.15)';
+    const C_ASCII = 'rgba(168,158,186,0.26)';
+    const C_BAND = 'rgba(168,85,247,0.07)';
+
+    let W = 0,
+      H = 0,
+      dpr = 1,
+      adv = 0,
+      scrollPx = 0,
+      rows = 0;
+    let offsetW = 0,
+      hexW = 0,
+      panelW = 0,
+      panels = 1,
+      rowBytes = 16;
+
+    function build() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas!.width = W * dpr;
+      canvas!.height = H * dpr;
+      canvas!.style.width = W + 'px';
+      canvas!.style.height = H + 'px';
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx!.font = FONT + "px 'JetBrains Mono', ui-monospace, monospace";
+      ctx!.textBaseline = 'alphabetic';
+      adv = ctx!.measureText('0').width || FONT * 0.6;
+      rows = Math.ceil(H / ROW_H) + 2;
+
+      offsetW = 9 * adv;
+      hexW = BYTES * 3 * adv + adv;
+      const asciiW = (BYTES + 2) * adv;
+      const panelContent = offsetW + hexW + 2 * adv + asciiW;
+      panelW = panelContent + 3.5 * adv;
+      panels = Math.ceil(W / panelW) + 1;
+      rowBytes = BYTES * panels;
+    }
+    build();
+
+    const hex2 = (b: number) => b.toString(16).padStart(2, '0').toUpperCase();
+    const hex8 = (n: number) => (n >>> 0).toString(16).padStart(8, '0').toUpperCase();
+
+    function drawRow(absRow: number, y: number) {
+      const centerBand = Math.abs(y - H / 2) < ROW_H * 0.55;
+      if (centerBand) {
+        ctx!.fillStyle = C_BAND;
+        ctx!.fillRect(0, y - ROW_H + 6, W, ROW_H);
+      }
+      const boost = centerBand;
+
+      for (let pnl = 0; pnl < panels; pnl++) {
+        const px = pnl * panelW;
+        const addr = absRow * rowBytes + pnl * BYTES;
+
+        ctx!.fillStyle = C_OFFSET;
+        ctx!.fillText(hex8(addr), px, y);
+
+        let x = px + offsetW;
+        let ascii = '';
+        for (let col = 0; col < BYTES; col++) {
+          if (col === 8) x += adv;
+          const gcol = pnl * BYTES + col;
+          const b = byteAt(absRow, gcol);
+          if (isHot(absRow, gcol)) {
+            const sh = 0.5 + 0.32 * Math.sin(now * 0.0022 + absRow * 7 + gcol * 13);
+            ctx!.fillStyle = `rgba(216,180,254,${sh.toFixed(3)})`;
+          } else if (b === 0) ctx!.fillStyle = C_ZERO;
+          else ctx!.fillStyle = boost ? 'rgba(206,196,224,0.46)' : C_BYTE;
+          ctx!.fillText(hex2(b), x, y);
+          x += adv * 3;
+          ascii += b >= 32 && b < 127 ? String.fromCharCode(b) : '.';
+        }
+
+        ctx!.fillStyle = boost ? 'rgba(180,170,198,0.40)' : C_ASCII;
+        ctx!.fillText('|' + ascii + '|', px + offsetW + hexW + 2 * adv, y);
+      }
+    }
+
+    let raf = 0,
+      last = 0,
+      now = 0;
+    const interval = 1000 / 30;
+    function frame(t: number) {
+      raf = requestAnimationFrame(frame);
+      if (t - last < interval) return;
+      last = t;
+      now = t;
+
+      scrollPx += SPEED;
+      ctx!.clearRect(0, 0, W, H);
+      ctx!.font = FONT + "px 'JetBrains Mono', ui-monospace, monospace";
+
+      const baseRow = Math.floor(scrollPx / ROW_H);
+      const shift = scrollPx % ROW_H;
+      for (let i = 0; i < rows; i++) {
+        const y = i * ROW_H - shift + FONT;
+        drawRow(baseRow + i, y);
+      }
+    }
+    raf = requestAnimationFrame(frame);
+
+    let rt: number;
+    const onResize = () => {
+      clearTimeout(rt);
+      rt = window.setTimeout(build, 150);
+    };
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(rt);
+      window.removeEventListener('resize', onResize);
+    };
+  }, []);
+
+  return <canvas id="matrix" ref={canvasRef} />;
+}
+
+/* ============================================================
+   Scramble / decode heading
+   ============================================================ */
+
+const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<>/\\=+*#$%@!{}[]';
+
+function ScrambleText({ text }: { text: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.textContent = text;
+    if (reducedMotion) return;
+
+    let raf = 0;
+    let done = false;
+    const run = () => {
+      const dur = 620;
+      const start = performance.now();
+      const chars = text.split('');
+      const tick = (nowTs: number) => {
+        const t = Math.min(1, (nowTs - start) / dur);
+        let out = '';
+        for (let i = 0; i < chars.length; i++) {
+          if (chars[i] === ' ') {
+            out += ' ';
+            continue;
+          }
+          const reveal = i / chars.length;
+          if (t >= reveal + 0.15) out += chars[i];
+          else out += GLYPHS[(Math.random() * GLYPHS.length) | 0];
+        }
+        el.textContent = out;
+        if (t < 1) raf = requestAnimationFrame(tick);
+        else el.textContent = text;
+      };
+      raf = requestAnimationFrame(tick);
+    };
+
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting && !done) {
+          done = true;
+          run();
+          io.disconnect();
+        }
+      },
+      { threshold: 0.12 }
+    );
+    io.observe(el);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      io.disconnect();
+    };
+  }, [text]);
+
+  return <span className="scramble" ref={ref} />;
+}
+
+/* ============================================================
+   Reveal-on-scroll wrapper
+   ============================================================ */
+
+function useReveal<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (reducedMotion) {
+      el.classList.add('in');
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          el.classList.add('in');
+          io.unobserve(el);
+        }
+      },
+      { threshold: 0.12 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return ref;
+}
+
+/* ============================================================
+   Hero terminal typing
+   ============================================================ */
+
+function HeroTerminal() {
+  const termRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const body = bodyRef.current;
+    const term = termRef.current;
+    if (!body || !term) return;
+
+    body.innerHTML = '';
+
+    const socOut = social
+      .map(
+        (s) =>
+          `<a class="soc" href="${s.url}" target="_blank" rel="noopener" data-link>${ICON_MARKUP[s.icon]}<span>${s.name}</span></a>`
+      )
+      .join('');
+
+    const PROMPT =
+      '<span class="prompt-user">visitor</span><span class="prompt-sym">@</span><span class="prompt-host">whyn0t</span><span class="prompt-sym">:</span><span class="prompt-path">~</span><span class="prompt-sym">$</span> ';
+
+    type Step =
+      | { type: 'cmd'; text: string }
+      | { type: 'html'; html: string }
+      | { type: 'final' };
+
+    const steps: Step[] = [
+      { type: 'cmd', text: 'whoami' },
+      { type: 'html', html: `<div class="hero-name">${identity.name}</div>` },
+      { type: 'cmd', text: 'cat role.txt' },
+      {
+        type: 'html',
+        html: `<div class="hero-role">${identity.headline}</div><div class="hero-sub">${identity.tagline}</div>`,
+      },
+      { type: 'cmd', text: 'ls ./connect' },
+      {
+        type: 'html',
+        html: `<div class="hero-actions">${socOut}<a class="cta" href="#projects" data-link>./view --work ${ICON_MARKUP.arrow}</a></div>`,
+      },
+      { type: 'final' },
+    ];
+
+    const timers: number[] = [];
+    let si = 0;
+
+    const addLine = (html: string) => {
+      const d = document.createElement('div');
+      d.className = 'tline';
+      d.innerHTML = html;
+      body.appendChild(d);
+      return d;
+    };
+
+    const nextStep = () => {
+      if (si >= steps.length) return;
+      const step = steps[si++];
+      if (step.type === 'cmd') {
+        const lineEl = addLine(PROMPT + '<span class="typed"></span><span class="caret"></span>');
+        const typedSpan = lineEl.querySelector('.typed') as HTMLElement;
+        const caret = lineEl.querySelector('.caret') as HTMLElement;
+        let ci = 0;
+        const speed = reducedMotion ? 0 : 42;
+        const typeChar = () => {
+          if (ci <= step.text.length) {
+            typedSpan.textContent = step.text.slice(0, ci);
+            ci++;
+            if (reducedMotion) {
+              typedSpan.textContent = step.text;
+              caret.remove();
+              timers.push(window.setTimeout(nextStep, 60));
+              return;
+            }
+            timers.push(window.setTimeout(typeChar, speed + Math.random() * 40));
+          } else {
+            caret.remove();
+            timers.push(window.setTimeout(nextStep, 230));
+          }
+        };
+        typeChar();
+      } else if (step.type === 'html') {
+        const d = addLine(step.html);
+        d.style.opacity = '0';
+        d.style.transition = 'opacity .35s ease';
+        requestAnimationFrame(() => {
+          d.style.opacity = '1';
+        });
+        timers.push(window.setTimeout(nextStep, reducedMotion ? 40 : 360));
+      } else {
+        addLine(PROMPT + '<span class="caret"></span>');
+      }
+    };
+    nextStep();
+
+    const skip = () => {
+      if (si >= steps.length) return;
+      timers.forEach(clearTimeout);
+      body.innerHTML = '';
+      steps
+        .filter((s) => s.type !== 'final')
+        .forEach((s) => {
+          if (s.type === 'cmd') addLine(PROMPT + `<span class="typed">${s.text}</span>`);
+          else if (s.type === 'html') addLine(s.html);
+        });
+      addLine(PROMPT + '<span class="caret"></span>');
+      si = steps.length;
+    };
+
+    const onClick = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest('a')) return;
+      if (si < steps.length) skip();
+    };
+    term.addEventListener('click', onClick);
+
+    return () => {
+      timers.forEach(clearTimeout);
+      term.removeEventListener('click', onClick);
+    };
+  }, []);
+
+  return (
+    <div className="term hero-term" ref={termRef}>
+      <div className="term-bar">
+        <span className="dots">
+          <i />
+          <i />
+          <i />
+        </span>
+        <span className="term-title">
+          <b>tiago</b>@portfolio: ~ — zsh
+        </span>
+      </div>
+      <div className="term-body" ref={bodyRef} />
+    </div>
+  );
+}
+
+/* ============================================================
+   Custom cursor
+   ============================================================ */
+
+function useCustomCursor() {
+  useEffect(() => {
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+    document.documentElement.classList.add('cursor-custom');
+    const cursorEl = document.createElement('div');
+    cursorEl.className = 'cursor hidden';
+    document.body.appendChild(cursorEl);
+
+    let x = innerWidth / 2,
+      y = innerHeight / 2,
+      tx = x,
+      ty = y;
+    const onMove = (e: MouseEvent) => {
+      tx = e.clientX;
+      ty = e.clientY;
+      cursorEl.classList.remove('hidden');
+    };
+    const onLeave = () => cursorEl.classList.add('hidden');
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseleave', onLeave);
+
+    const onOver = (e: MouseEvent) => {
+      const link = (e.target as HTMLElement).closest('a, button, [data-link]');
+      cursorEl.classList.toggle('link', !!link);
+    };
+    document.addEventListener('mouseover', onOver);
+
+    let raf = 0;
+    const loop = () => {
+      x += (tx - x) * 0.35;
+      y += (ty - y) * 0.35;
+      cursorEl.style.transform = `translate(${x}px, ${y}px) translate(-50%,-50%)`;
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseleave', onLeave);
+      document.removeEventListener('mouseover', onOver);
+      cursorEl.remove();
+      document.documentElement.classList.remove('cursor-custom');
+    };
+  }, []);
+}
+
+/* ============================================================
+   Header / navigation
+   ============================================================ */
 
 function Header() {
   const [scrolled, setScrolled] = useState(false);
+  const [active, setActive] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
-  const activeSection = useActiveSection(sectionIds);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50);
+    const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    onScroll();
+
+    const observers: IntersectionObserver[] = [];
+    navItems.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const io = new IntersectionObserver(
+        ([e]) => {
+          if (e.isIntersecting) setActive(id);
+        },
+        { rootMargin: '-45% 0px -50% 0px' }
+      );
+      io.observe(el);
+      observers.push(io);
+    });
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      observers.forEach((o) => o.disconnect());
+    };
   }, []);
 
-  // Close mobile menu on navigation
-  const handleNavClick = () => setMobileOpen(false);
-
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? 'bg-black/90 backdrop-blur-lg shadow-lg shadow-purple-900/10'
-          : 'bg-transparent'
-      }`}
-    >
-      <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-        <a
-          href="#hero"
-          className="text-2xl font-bold text-purple-400 hover:text-purple-300 transition-colors"
-          style={{ fontFamily: "'VT323', monospace" }}
-        >
-          &gt; WhyN0t_
+    <header className={scrolled ? 'scrolled' : ''}>
+      <div className="wrap nav">
+        <a className="logo" href="#hero" data-link>
+          &gt;&nbsp;WhyN0t<span className="b" />
         </a>
-
-        {/* Desktop nav */}
-        <nav className="hidden sm:block">
-          <ul className="flex gap-6 text-sm tracking-wide uppercase">
-            {navItems.map((item) => {
-              const id = item.toLowerCase();
-              const isActive = activeSection === id;
-              return (
-                <li key={item}>
-                  <a
-                    href={`#${id}`}
-                    className={`transition-colors duration-200 ${
-                      isActive
-                        ? 'text-purple-300'
-                        : 'text-gray-300 hover:text-purple-300'
-                    }`}
-                  >
-                    {item}
-                    {isActive && (
-                      <span className="block h-0.5 mt-1 bg-purple-300 rounded-full" />
-                    )}
-                  </a>
-                </li>
-              );
-            })}
+        <nav className="nav-desktop">
+          <ul>
+            {navItems.map(({ id, label }) => (
+              <li key={id}>
+                <a
+                  className={`lnk ${active === id ? 'active' : ''}`}
+                  href={`#${id}`}
+                  data-sec={id}
+                  data-link
+                >
+                  <span className="slash">~/</span>
+                  {label}
+                </a>
+              </li>
+            ))}
           </ul>
         </nav>
-
-        {/* Mobile hamburger */}
+        <div className="status">
+          <span className="led" />
+          Leiria · Portugal
+        </div>
         <button
-          className="sm:hidden p-2 text-gray-400 hover:text-purple-400 transition-colors"
-          onClick={() => setMobileOpen(!mobileOpen)}
+          className="burger"
           aria-label="Toggle menu"
+          data-link
+          onClick={() => setMobileOpen((o) => !o)}
         >
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
+            <path d="M3 6h18M3 12h18M3 18h18" />
+          </svg>
         </button>
       </div>
-
-      {/* Mobile dropdown */}
-      {mobileOpen && (
-        <nav className="sm:hidden bg-black/95 backdrop-blur-lg border-t border-purple-500/10">
-          <ul className="flex flex-col px-6 py-4 gap-4 text-sm tracking-wide uppercase">
-            {navItems.map((item) => {
-              const id = item.toLowerCase();
-              const isActive = activeSection === id;
-              return (
-                <li key={item}>
-                  <a
-                    href={`#${id}`}
-                    onClick={handleNavClick}
-                    className={`block py-1 transition-colors duration-200 ${
-                      isActive ? 'text-purple-300' : 'text-gray-300'
-                    }`}
-                  >
-                    {item}
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-      )}
+      <div className={`mobile-nav ${mobileOpen ? 'open' : ''}`}>
+        <ul>
+          {navItems.map(({ id }) => (
+            <li key={id}>
+              <a
+                href={`#${id}`}
+                data-sec={id}
+                className={active === id ? 'active' : ''}
+                onClick={() => setMobileOpen(false)}
+              >
+                ~/{id}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
     </header>
   );
 }
 
-// ── Project Card ──
+/* ============================================================
+   Projects — ls -la file browser
+   ============================================================ */
 
-function ProjectCard({ project }: { project: Project }) {
-  const config = categoryConfig[project.category];
-  const Icon = config.icon;
+function ProjectsSection() {
+  const [activeCat, setActiveCat] = useState<Category>('All');
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const ref = useReveal<HTMLElement>();
+
+  const items = activeCat === 'All' ? projects : projects.filter((p) => p.category === activeCat);
+  const filterFlag = activeCat === 'All' ? '' : ` --filter=${CATMAP[activeCat as CategoryName].owner}`;
 
   return (
-    <div
-      className="group bg-gray-900/50 border border-purple-500/10 rounded-xl p-6
-                 hover:border-purple-500/30 hover:bg-gray-900/70 transition-all duration-300
-                 card-glow backdrop-blur-sm"
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Icon className={`w-4 h-4 ${config.color}`} />
-          <span className={`text-xs font-medium ${config.color} uppercase tracking-wider`}>
-            {project.category}
-          </span>
+    <section className="block reveal" id="projects" ref={ref}>
+      <div className="wrap">
+        <h2 className="sec-head">
+          <span className="p">visitor@whyn0t:~$</span>
+          <span className="cmd">cd</span>
+          <ScrambleText text="~/projects" />
+        </h2>
+        <div className="term proj-term">
+          <div className="term-bar">
+            <span className="dots">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className="term-title">
+              <b>tiago</b>@portfolio: ~/projects
+            </span>
+          </div>
+          <div className="proj-cmd">
+            <span className="prompt-user" style={{ color: 'var(--dev)' }}>
+              tiago@portfolio
+            </span>
+            :<span className="prompt-path">~/projects</span>$&nbsp;
+            <span>ls</span>&nbsp;<span className="flag">-la</span>
+            <span className="flag">{filterFlag}</span>
+            <span className="total">total {items.length}</span>
+          </div>
+          <div className="filters">
+            {categories.map((c) => {
+              const cnt = c === 'All' ? projects.length : projects.filter((p) => p.category === c).length;
+              return (
+                <button
+                  key={c}
+                  className={`filter ${c === activeCat ? 'active' : ''}`}
+                  data-cat={c}
+                  data-link
+                  onClick={() => setActiveCat(c)}
+                >
+                  <span className="dot" />
+                  {c.toLowerCase()}
+                  <span className="cnt">{cnt}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="file-list">
+            {items.map((p) => {
+              const cm = CATMAP[p.category];
+              const isOpen = !!open[p.slug];
+              return (
+                <div className={`file ${isOpen ? 'open' : ''}`} data-cat={p.category} key={p.slug}>
+                  <button
+                    className="file-row"
+                    data-link
+                    aria-expanded={isOpen}
+                    onClick={() => setOpen((o) => ({ ...o, [p.slug]: !o[p.slug] }))}
+                  >
+                    <span className="f-perm">
+                      -rwx<span className="x">r-x</span>r--
+                    </span>
+                    <span className="f-cat">{cm.owner}</span>
+                    <span className="f-tags">{p.skills.length} tags</span>
+                    <span className="f-name">
+                      {p.slug}
+                      <span className={cm.cls}>{cm.ext}</span>
+                    </span>
+                    <span className="f-chevron">
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="15"
+                        height="15"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M9 6l6 6-6 6" />
+                      </svg>
+                    </span>
+                  </button>
+                  <div className="file-detail" style={{ height: isOpen ? 'auto' : 0 }}>
+                    <div className="file-detail-inner">
+                      <h3 className="fd-title">{p.title}</h3>
+                      {p.association && <p className="fd-assoc"># {p.association}</p>}
+                      <p className="fd-desc">{p.description}</p>
+                      <div className="fd-skills">
+                        {p.skills.map((s) => (
+                          <span className="fd-skill" key={s}>
+                            {s.replace(/\s+/g, '_').replace(/[.#]/g, '')}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        {project.association && (
-          <span className="text-xs text-gray-500 flex items-center gap-1">
-            <GraduationCap className="w-3 h-3" />
-            {project.association}
-          </span>
-        )}
       </div>
-
-      <h3
-        className="text-lg font-semibold text-white mb-3 group-hover:text-purple-300 transition-colors leading-tight"
-        style={{ fontFamily: "'VT323', monospace", fontSize: '1.4rem' }}
-      >
-        {project.title}
-      </h3>
-
-      <p className="text-sm text-gray-400 leading-relaxed mb-4">
-        {project.description}
-      </p>
-
-      <div className="flex flex-wrap gap-1.5">
-        {project.skills.map((skill, i) => (
-          <span
-            key={i}
-            className="px-2.5 py-1 text-xs font-medium bg-purple-500/15 text-purple-200 border border-purple-500/30 rounded-full"
-          >
-            {skill}
-          </span>
-        ))}
-      </div>
-    </div>
+    </section>
   );
 }
 
-// ── Main App ──
+/* ============================================================
+   App
+   ============================================================ */
 
 function App() {
-  const [activeCategory, setActiveCategory] = useState<Category>('All');
+  const [showTop, setShowTop] = useState(false);
+  const aboutRef = useReveal<HTMLElement>();
+  const expRef = useReveal<HTMLElement>();
+  const eduRef = useReveal<HTMLElement>();
 
-  const filteredProjects = useMemo(() =>
-    activeCategory === 'All'
-      ? projects
-      : projects.filter((p) => p.category === activeCategory),
-    [activeCategory]
-  );
+  useCustomCursor();
 
-  const handleCategoryChange = useCallback((cat: Category) => setActiveCategory(cat), []);
+  useEffect(() => {
+    const onScroll = () => setShowTop(window.scrollY > window.innerHeight * 0.6);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
-    <div className="min-h-screen relative bg-black text-white overflow-x-hidden">
-      {/* Background */}
-      <div className="fixed inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-950/20 via-black to-black" />
-        <MatrixRain />
-      </div>
+    <>
+      <HexDump />
+      <div className="bg-veil" />
+      <div className="bg-scan" />
 
       <Header />
-      <ScrollToTop />
 
-      <main className="relative z-10">
-        {/* ── Hero ── */}
-        <section id="hero" className="min-h-screen flex items-center justify-center pt-16">
-          <FadeInSection className="text-center px-6">
-            <h1
-              className="text-6xl md:text-8xl font-bold mb-4 py-2 tracking-tight leading-none bg-gradient-to-r from-white via-purple-200 to-purple-400 text-transparent bg-clip-text"
-              style={{ fontFamily: "'Inter', sans-serif" }}
-            >
-              Tiago Pereira
-            </h1>
-            <p className="text-lg text-gray-400 mb-10 max-w-lg mx-auto">
-              <Typewriter text="Computer Engineer · Cybersecurity & Digital Forensics" speed={45} />
-            </p>
-            <div className="flex justify-center gap-3 mb-8">
-              {socialLinks.map(({ href, icon: SocialIcon, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-3 rounded-lg bg-purple-900/40 border border-purple-500/20
-                             hover:bg-purple-800/50 hover:border-purple-500/40 hover:scale-110
-                             transition-all duration-200 glow"
-                  title={label}
-                >
-                  <SocialIcon className="w-5 h-5" />
-                </a>
-              ))}
-            </div>
-            <a
-              href="#projects"
-              className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-purple-300
-                         border border-purple-500/30 rounded-full hover:bg-purple-900/40
-                         hover:border-purple-500/50 transition-all duration-200"
-            >
-              View my work
-              <ChevronUp className="w-4 h-4 rotate-180" />
-            </a>
-          </FadeInSection>
+      <main>
+        {/* HERO */}
+        <section id="hero">
+          <div className="wrap hero-grid">
+            <HeroTerminal />
+          </div>
+          <div className="scroll-hint">
+            <span>scroll</span>
+            <span className="line" />
+          </div>
         </section>
 
-        {/* ── About ── */}
-        <FadeInSection id="about" className="container mx-auto px-6 py-20">
-          <div className="max-w-3xl mx-auto bg-gray-900/50 border border-purple-500/10 backdrop-blur-sm rounded-xl p-8">
-            <h2
-              className="text-2xl font-semibold mb-4 flex items-center gap-2"
-              style={{ fontFamily: "'VT323', monospace" }}
-            >
-              <Terminal className="w-5 h-5 text-purple-400" />
-              About Me
-            </h2>
-            <p className="text-gray-400 leading-relaxed">
-              Computer Engineer entering the second year of an MSc in Cybersecurity &amp; Digital
-              Forensics. My work so far has focused on malware development and analysis, forensic
-              investigation, secure network design, and penetration testing, all through hands-on
-              projects that replicate real-world attack and defence scenarios.
-            </p>
-          </div>
-        </FadeInSection>
-
-        {/* ── Experience ── */}
-        <FadeInSection id="experience" className="container mx-auto px-6 py-20">
-          <h2
-            className="text-2xl font-semibold mb-10 flex items-center gap-2"
-            style={{ fontFamily: "'VT323', monospace" }}
-          >
-            <Briefcase className="w-5 h-5 text-purple-400" />
-            Experience
-          </h2>
-          <div className="max-w-3xl mx-auto relative">
-            <div className="absolute left-[15px] top-[20px] bottom-[20px] w-px bg-purple-500/20" />
-
-            <div className="space-y-6">
-              {experience.map((exp, i) => {
-                const isSecondary = exp.type === 'secondary';
-                return (
-                  <div key={i} className="flex gap-6">
-                    <div className="relative flex-shrink-0">
-                      {isSecondary ? (
-                        <div className="w-[31px] h-[31px] rounded-full border-2 border-purple-500/25 border-dashed flex items-center justify-center z-10 relative mt-1">
-                          <div className="w-2 h-2 rounded-full bg-purple-500/40" />
-                        </div>
-                      ) : (
-                        <div className="w-[31px] h-[31px] rounded-full bg-purple-500/20 border-2 border-purple-500/40 flex items-center justify-center z-10 relative mt-1">
-                          <div className="w-2 h-2 rounded-full bg-purple-400" />
-                        </div>
-                      )}
-                    </div>
-                    <div className={`bg-gray-900/50 border border-purple-500/10 rounded-xl flex-1 hover:border-purple-500/30 transition-all duration-300 ${isSecondary ? 'p-5' : 'p-6'}`}>
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-1">
-                        <h3
-                          className={`font-semibold ${isSecondary ? 'text-gray-300 text-base' : 'text-white text-lg'}`}
-                          style={{ fontFamily: "'VT323', monospace", fontSize: isSecondary ? '1.15rem' : '1.3rem' }}
-                        >
-                          {exp.title}
-                        </h3>
-                        <span className={`text-sm font-medium whitespace-nowrap sm:ml-4 ${isSecondary ? 'text-purple-400/70' : 'text-purple-400'}`}>{exp.period}</span>
-                      </div>
-                      <p className={`text-sm ${isSecondary ? 'text-purple-300/70' : 'text-purple-300'}`}>{exp.organisation}</p>
-                      {exp.location && (
-                        <p className="text-gray-500 text-sm mt-0.5">{exp.location}</p>
-                      )}
-                      <ul className="mt-3 space-y-2">
-                        {exp.bullets.map((bullet, j) => (
-                          <li key={j} className={`text-sm leading-relaxed flex gap-2 ${isSecondary ? 'text-gray-500' : 'text-gray-400'}`}>
-                            <span className="text-purple-500/60 mt-1.5 flex-shrink-0">&#8226;</span>
-                            <span>{bullet}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                );
-              })}
+        <div className="below">
+          {/* ABOUT */}
+          <section className="block reveal" id="about" ref={aboutRef}>
+            <div className="wrap">
+              <h2 className="sec-head">
+                <span className="p">visitor@whyn0t:~$</span>
+                <span className="cmd">cat</span>
+                <ScrambleText text="about.md" />
+              </h2>
+              <div className="about-card">
+                <p className="eyebrow">// readme</p>
+                <p className="about-body">
+                  <strong>Computer Engineer</strong> with an MSc in{' '}
+                  <strong>Cybersecurity &amp; Digital Forensics</strong>. My work has focused on
+                  malware development and analysis, forensic investigation, secure network design,
+                  and penetration testing — all through hands-on projects that replicate real-world
+                  attack and defence scenarios.
+                </p>
+                <div className="about-tags">
+                  <span className="about-tag">
+                    <span className="h">domain:</span> malware-analysis
+                  </span>
+                  <span className="about-tag">
+                    <span className="h">domain:</span> digital-forensics
+                  </span>
+                  <span className="about-tag">
+                    <span className="h">domain:</span> network-security
+                  </span>
+                  <span className="about-tag">
+                    <span className="h">domain:</span> pentesting
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-        </FadeInSection>
+          </section>
 
-        {/* ── Education ── */}
-        <FadeInSection id="education" className="container mx-auto px-6 py-20">
-          <h2
-            className="text-2xl font-semibold mb-10 flex items-center gap-2"
-            style={{ fontFamily: "'VT323', monospace" }}
-          >
-            <GraduationCap className="w-5 h-5 text-purple-400" />
-            Education
-          </h2>
-          <div className="max-w-3xl mx-auto relative">
-            <div className="absolute left-[15px] top-[20px] bottom-[20px] w-px bg-purple-500/20" />
-
-            <div className="space-y-6">
-              {education.map((edu, i) => (
-                <div key={i} className="flex gap-6">
-                  <div className="relative flex-shrink-0">
-                    <div className="w-[31px] h-[31px] rounded-full bg-purple-500/20 border-2 border-purple-500/40 flex items-center justify-center z-10 relative mt-1">
-                      <div className="w-2 h-2 rounded-full bg-purple-400" />
-                    </div>
-                  </div>
-                  <div className="bg-gray-900/50 border border-purple-500/10 rounded-xl p-6 flex-1 hover:border-purple-500/30 transition-all duration-300">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1">
-                      <h3
-                        className="text-lg font-semibold text-white"
-                        style={{ fontFamily: "'VT323', monospace", fontSize: '1.3rem' }}
-                      >
-                        {edu.degree}
-                      </h3>
-                      <span className="text-sm text-purple-400 font-medium">{edu.period}</span>
-                    </div>
-                    <p className="text-purple-300 text-sm">{edu.field}</p>
-                    <p className="text-gray-500 text-sm mt-1">{edu.school}</p>
-                    <p className="text-gray-500 text-sm mt-2">Focus areas: {edu.focus}</p>
+          {/* EXPERIENCE */}
+          <section className="block reveal" id="experience" ref={expRef}>
+            <div className="wrap">
+              <h2 className="sec-head">
+                <span className="p">visitor@whyn0t:~$</span>
+                <span className="cmd">cd</span>
+                <ScrambleText text="~/experience" />
+              </h2>
+              <div className="term section-term">
+                <div className="term-bar">
+                  <span className="dots">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                  <span className="term-title">
+                    <b>tiago</b>@portfolio: ~/experience
+                  </span>
+                </div>
+                <div className="section-cmd">
+                  <span className="prompt-user">tiago@portfolio</span>
+                  <span className="prompt-sym">:</span>
+                  <span className="prompt-path">~/experience</span>
+                  <span className="prompt-sym">$</span>
+                  <span>cat</span>
+                  <span className="flag">experience.log</span>
+                </div>
+                <div className="term-pad">
+                  <div className="timeline">
+                    {experience.map((e, i) => (
+                      <div className={`tl-item ${e.type === 'secondary' ? 'secondary' : ''}`} key={i}>
+                        <div className="tl-dot">
+                          <i />
+                        </div>
+                        <div className="tl-card">
+                          <div className="tl-top">
+                            <h3 className="tl-title">{e.title}</h3>
+                            <span className="tl-period">{e.period}</span>
+                          </div>
+                          <p className="tl-org">{e.organisation}</p>
+                          {e.location && <p className="tl-loc">{e.location}</p>}
+                          <ul className="tl-bullets">
+                            {e.bullets.map((b, j) => (
+                              <li key={j}>{b}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
-        </FadeInSection>
+          </section>
 
-        {/* ── Projects ── */}
-        <FadeInSection id="projects" className="container mx-auto px-6 py-20">
-          <h2
-            className="text-2xl font-semibold mb-8"
-            style={{ fontFamily: "'VT323', monospace" }}
-          >
-            Projects
-          </h2>
-
-          {/* Category Filter */}
-          <div className="flex gap-2 mb-8 flex-wrap">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => handleCategoryChange(cat)}
-                className={`px-4 py-1.5 rounded-full text-sm transition-all duration-200 border ${
-                  activeCategory === cat
-                    ? 'bg-purple-600/30 border-purple-500/50 text-purple-300'
-                    : 'bg-transparent border-gray-700/50 text-gray-500 hover:border-gray-600 hover:text-gray-300'
-                }`}
-              >
-                {cat}
-                {cat !== 'All' && (
-                  <span className="ml-1.5 text-xs opacity-60">
-                    {projects.filter((p) => p.category === cat).length}
+          {/* EDUCATION */}
+          <section className="block reveal" id="education" ref={eduRef}>
+            <div className="wrap">
+              <h2 className="sec-head">
+                <span className="p">visitor@whyn0t:~$</span>
+                <span className="cmd">cd</span>
+                <ScrambleText text="~/education" />
+              </h2>
+              <div className="term section-term">
+                <div className="term-bar">
+                  <span className="dots">
+                    <i />
+                    <i />
+                    <i />
                   </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Project Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {filteredProjects.map((project) => (
-              <ProjectCard key={project.title} project={project} />
-            ))}
-          </div>
-        </FadeInSection>
-
-        {/* ── Footer ── */}
-        <footer className="py-8 mt-10">
-          <div className="container mx-auto px-6">
-            <div className="flex flex-wrap justify-center gap-x-10 gap-y-4 text-sm text-gray-500 mb-4">
-              {[...toolLinks, ...haxLinks].map((link) => (
-                <a
-                  key={link.name}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-purple-300 transition-colors"
-                >
-                  {link.name}
-                </a>
-              ))}
-              {socialLinks.map(({ href, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-purple-300 transition-colors"
-                >
-                  {label}
-                </a>
-              ))}
+                  <span className="term-title">
+                    <b>tiago</b>@portfolio: ~/education
+                  </span>
+                </div>
+                <div className="section-cmd">
+                  <span className="prompt-user">tiago@portfolio</span>
+                  <span className="prompt-sym">:</span>
+                  <span className="prompt-path">~/education</span>
+                  <span className="prompt-sym">$</span>
+                  <span>cat</span>
+                  <span className="flag">education.json</span>
+                </div>
+                <div className="term-pad">
+                  <div className="edu-grid">
+                    {education.map((e, i) => (
+                      <div className="edu-card" key={i}>
+                        <span className="edu-badge">{e.degree}</span>
+                        <h3 className="edu-degree">{e.field}</h3>
+                        <p className="edu-school">{e.school}</p>
+                        <p className="edu-period">{e.period}</p>
+                        <p className="edu-focus">
+                          <b>Focus:</b> {e.focus}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-            <p className="text-center text-sm text-gray-600">
-              &copy; {new Date().getFullYear()} Tiago Pereira
-            </p>
-          </div>
-        </footer>
+          </section>
+
+          {/* PROJECTS */}
+          <ProjectsSection />
+
+          {/* FOOTER */}
+          <footer>
+            <div className="wrap foot-term">
+              <p className="foot-line">
+                <span className="c">visitor@whyn0t</span>:~$ cat ~/.bookmarks
+              </p>
+              <div className="foot-cols">
+                {footerCols.map((col) => (
+                  <div className="foot-col" key={col.title}>
+                    <h4>{col.title}</h4>
+                    {col.links.map((l) => (
+                      <a key={l.label} href={l.url} target="_blank" rel="noopener" data-link>
+                        {l.label}
+                      </a>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <div className="foot-bottom">
+                <span># © {new Date().getFullYear()} Tiago Pereira — all systems nominal</span>
+              </div>
+            </div>
+          </footer>
+        </div>
       </main>
-    </div>
+
+      <button
+        className={`totop ${showTop ? 'show' : ''}`}
+        aria-label="Scroll to top"
+        data-link
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 19V5M6 11l6-6 6 6" />
+        </svg>
+      </button>
+    </>
   );
 }
 
